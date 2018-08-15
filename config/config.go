@@ -1,0 +1,56 @@
+package config
+
+import (
+	"errors"
+	"strings"
+
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
+)
+
+//Config is used to hold properties read from property file
+type Config struct {
+	ServerPort int          `mapstructure:"server_port"`
+	LogLevel   logrus.Level `mapstructure:"log_level"`
+	ElkLogging bool         `mapstructure:"use_elk"`
+	//Redis      redis.Config
+}
+
+//ErrAppPropertiesNotFound is used when the property file is missing at the reading time
+var ErrAppPropertiesNotFound = errors.New("Could not read from application_properties.json")
+
+func init() {
+	pflag.String("profile", "dev", "set active profile")
+	pflag.String("use_elk", "false", "use remote ELK logging")
+	pflag.String("log_level", "debug", "set log level")
+
+	pflag.Parse()
+}
+
+//ReadConfig read properties from file and maps them to Config struct
+func ReadConfig(propertyFile string) (*Config, error) {
+	err := viper.BindPFlags(pflag.CommandLine)
+	if err != nil {
+		logger.WithError(err).Error("cannot bind cmdline flags")
+	}
+
+	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	viper.SetConfigFile(propertyFile)
+	err = viper.ReadInConfig()
+	if err != nil {
+		logger.Error(ErrAppPropertiesNotFound.Error())
+		return nil, ErrAppPropertiesNotFound
+	}
+
+	var p Config
+	err = viper.Unmarshal(&p)
+	if err != nil {
+		logger.Error("Could not deserialize properties from application properties file")
+		return nil, err
+	}
+
+	return &p, nil
+}
