@@ -38,10 +38,14 @@ func NewAPIServer(config *conf.Config, cacheEndpoint cachestore.Endpoint) API {
 	e.Use(middleware.Recover())
 
 	e.GET("/info", api.info)
-	e.GET("/resolve", api.cache.Resolve)
+	e.GET("/resolve", api.resolve)
 
 	api.echo = e
 	return &api
+}
+
+func (api *APIServer) resolve(ctx echo.Context) error {
+	return api.cache.Resolve(ctx)
 }
 
 func (api *APIServer) info(ctx echo.Context) error {
