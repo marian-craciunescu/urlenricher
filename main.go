@@ -5,6 +5,8 @@ import (
 	"github.com/marian-craciunescu/urlenricher/rest"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -15,9 +17,10 @@ func main() {
 
 	conf, err := config.ReadConfig(activeProfile.PropertyFile())
 	if err != nil {
-		log.WithError(err).Error("Could not read config fail.Exiting")
-		os.Exit(-1)
+		panic("Could not read config fail.Exiting")
 	}
+
+	initLogging(conf.LogLevel, conf.ElkLogging)
 
 	apiServer := rest.NewAPIServer(conf)
 	err = apiServer.Start()
@@ -26,4 +29,22 @@ func main() {
 		os.Exit(-2)
 	}
 
+	waitForTerminationAndExit(func() {
+		err := apiServer.Stop()
+		if err != nil {
+			logger.WithError(err).Error("Failed to correctly stop api server")
+		}
+	})
+
+}
+
+func waitForTerminationAndExit(callback func()) {
+	signalC := make(chan os.Signal)
+	signal.Notify(signalC, syscall.SIGINT, syscall.SIGTERM)
+	sig := <-signalC
+	log.Infof("Got signal '%v' .. exiting gracefully now", sig)
+	callback()
+
+	log.Info("Exit gracefully now")
+	os.Exit(0)
 }

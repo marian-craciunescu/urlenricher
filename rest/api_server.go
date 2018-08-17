@@ -9,15 +9,22 @@ import (
 	"net/http"
 )
 
-type API struct {
+type API interface {
+	Start() error
+	Stop() error
+}
+
+//API is the rest api server struct
+type APIServer struct {
 	log    *logrus.Entry
 	config *conf.Config
 	echo   *echo.Echo
+	stopCh chan bool
 }
 
-func NewAPIServer(config *conf.Config) *API {
+func NewAPIServer(config *conf.Config) API {
 	// create the api
-	api := &API{
+	api := APIServer{
 		config: config,
 		log:    logger,
 	}
@@ -28,24 +35,34 @@ func NewAPIServer(config *conf.Config) *API {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	e.GET("/info", api.Info)
+	e.GET("/info", api.info)
 
 	api.echo = e
-	return api
+	return &api
 }
 
-func (api *API) Info(ctx echo.Context) error {
+func (api *APIServer) info(ctx echo.Context) error {
+	logger.WithField("client_ip", ctx.Request().Host).Debug("GET /info")
+
 	return ctx.JSON(http.StatusOK, map[string]string{
 		"description": "Urlenricher info page",
 		"info":        "demo",
 	})
 }
 
-func (api *API) Start() error {
-	return api.echo.Start(fmt.Sprintf(":%d", api.config.ServerPort))
+func (api *APIServer) Start() (err error) {
+	go func() {
+		err = api.echo.Start(fmt.Sprintf(":%d", api.config.ServerPort))
+		if err != nil {
+			logger.WithError(err).Error("Error starting rest api server")
+		}
+	}()
+
+	return
 }
 
 // Stop will shutdown the engine internally
-func (api *API) Stop() error {
+func (api *APIServer) Stop() error {
+	logger.Info("Stopping rest api server")
 	return api.echo.Close()
 }
