@@ -1,4 +1,4 @@
-package urlcache
+package cachestore
 
 import log "github.com/sirupsen/logrus"
 

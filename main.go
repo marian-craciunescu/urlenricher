@@ -22,7 +22,7 @@ func main() {
 
 	initLogging(conf.LogLevel, conf.ElkLogging)
 
-	apiServer := rest.NewAPIServer(conf)
+	apiServer := rest.NewAPIServer(conf, nil)
 	err = apiServer.Start()
 	if err != nil {
 		log.WithError(err).Error("Error starting rest server")

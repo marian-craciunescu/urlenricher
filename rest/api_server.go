@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"github.com/marian-craciunescu/urlenricher/cachestore"
 	conf "github.com/marian-craciunescu/urlenricher/config"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -20,9 +21,10 @@ type APIServer struct {
 	config *conf.Config
 	echo   *echo.Echo
 	stopCh chan bool
+	cache  cachestore.Endpoint
 }
 
-func NewAPIServer(config *conf.Config) API {
+func NewAPIServer(config *conf.Config, cacheEndpoint cachestore.Endpoint) API {
 	// create the api
 	api := APIServer{
 		config: config,
@@ -36,6 +38,7 @@ func NewAPIServer(config *conf.Config) API {
 	e.Use(middleware.Recover())
 
 	e.GET("/info", api.info)
+	e.GET("/resolve", api.cache.Resolve)
 
 	api.echo = e
 	return &api
