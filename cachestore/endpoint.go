@@ -3,6 +3,7 @@ package cachestore
 import (
 	"github.com/labstack/echo"
 	"github.com/marian-craciunescu/urlenricher/models"
+	"net/http"
 )
 
 type Endpoint interface {
@@ -31,6 +32,16 @@ func (e *urlEndpoint) Delete(baseURL string) error {
 }
 
 func (e *urlEndpoint) Resolve(ctx echo.Context) error {
-	//originalUrl =ctx.Request().URL.
+
+	logger.Info("Endpoint Resolve")
+
+	url, err := e.store.resolve("www.whatismyclassification.com")
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
+		return err
+	}
+	ctx.JSON(http.StatusOK, url)
 	return nil
 }

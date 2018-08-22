@@ -14,6 +14,8 @@ type Config struct {
 	ServerPort int          `mapstructure:"server_port"`
 	LogLevel   logrus.Level `mapstructure:"log_level"`
 	ElkLogging bool         `mapstructure:"use_elk"`
+	ApiKey     string       `mapstructure:"api_key"`
+	ApiSecret  string       `mapstructure:"api_secret"`
 	//Redis      redis.Config
 }
 
@@ -24,6 +26,8 @@ func init() {
 	pflag.String("profile", "dev", "set active profile")
 	pflag.String("use_elk", "false", "use remote ELK logging")
 	pflag.String("log_level", "debug", "set log level")
+	pflag.String("api_key", "", "set api key for brightcloud")
+	pflag.String("api_secret", "", "set api secret for brightcloud")
 
 	pflag.Parse()
 }

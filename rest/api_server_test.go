@@ -1,12 +1,12 @@
 package rest
 
 import (
+	"github.com/golang/mock/gomock"
 	"github.com/marian-craciunescu/urlenricher/config"
 	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"testing"
 	"time"
-	"github.com/golang/mock/gomock"
 )
 
 //go:generate mockgen -destination=mock_cache_endpoint_test.go -mock_names Endpoint=MockCacheEndpoint -package=rest github.com/marian-craciunescu/urlenricher/cachestore Endpoint
@@ -18,7 +18,7 @@ func TestAPIServer_StartStop(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	endpoint := NewMockCacheEndpoint(ctrl)
 
-	srv := NewAPIServer(&c,endpoint)
+	srv := NewAPIServer(&c, endpoint)
 
 	err := srv.Start()
 	a.NoError(err)
