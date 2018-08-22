@@ -1,7 +1,9 @@
 package main
 
 import (
+	"github.com/marian-craciunescu/urlenricher/cachestore"
 	"github.com/marian-craciunescu/urlenricher/config"
+	"github.com/marian-craciunescu/urlenricher/connector"
 	"github.com/marian-craciunescu/urlenricher/rest"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -22,7 +24,28 @@ func main() {
 
 	initLogging(conf.LogLevel, conf.ElkLogging)
 
-	apiServer := rest.NewAPIServer(conf, nil)
+	log.WithFields(log.Fields{
+		"key":    conf.ApiKey,
+		"secret": conf.ApiSecret,
+	}).Info("Starting with")
+
+	//
+
+	//Consumer Key: d7f469760203b9788367c16fe539c1
+	//Consumer Secret: f3996d096d69d67620735b0020e6ab94d2ab5bfc
+	brigthcloud, err := connector.NewBrightCloudConnector(conf.ApiKey, conf.ApiSecret)
+	if err != nil {
+		panic("Could not create connector.Exiting")
+	}
+
+	urlCache, err := cachestore.NewURLCacheStore(10, 2600, brigthcloud)
+	if err != nil {
+		panic("Could not create cache store.Exiting")
+	}
+
+	cacheEndpoint := cachestore.NewURLEndpoint(urlCache)
+
+	apiServer := rest.NewAPIServer(conf, cacheEndpoint)
 	err = apiServer.Start()
 	if err != nil {
 		log.WithError(err).Error("Error starting rest server")

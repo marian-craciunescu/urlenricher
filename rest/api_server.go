@@ -29,6 +29,7 @@ func NewAPIServer(config *conf.Config, cacheEndpoint cachestore.Endpoint) API {
 	api := APIServer{
 		config: config,
 		log:    logger,
+		cache:  cacheEndpoint,
 	}
 
 	// add the endpoints
@@ -45,6 +46,7 @@ func NewAPIServer(config *conf.Config, cacheEndpoint cachestore.Endpoint) API {
 }
 
 func (api *APIServer) resolve(ctx echo.Context) error {
+	logger.Info("Resolve api_server")
 	return api.cache.Resolve(ctx)
 }
 

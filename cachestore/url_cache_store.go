@@ -66,7 +66,7 @@ func (ucs *URLCacheStore) delete(u models.URL) error {
 }
 
 func (ucs *URLCacheStore) resolve(u string) (*models.URL, error) {
-
+	logger.Info("cache store resolve")
 	url, err := ucs.conn.Resolve(u)
 	if err != nil {
 		logger.WithError(err).Error("Error resolving url.")

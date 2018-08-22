@@ -1,6 +1,7 @@
 {
   "server_port" :8081,
   "log_level" :  5,
-  "use_elk" : false
-
+  "use_elk" : false,
+  "api_key": "1fb01176b0160daf61e8a4597f5341",
+  "api_secret": "1f12e7d2cebe79befeae7fadbc2d66fc71fa6dc7"
 }
