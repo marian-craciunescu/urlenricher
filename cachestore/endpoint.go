@@ -32,10 +32,10 @@ func (e *urlEndpoint) Delete(baseURL string) error {
 }
 
 func (e *urlEndpoint) Resolve(ctx echo.Context) error {
+	target := ctx.QueryParam("target")
+	logger.WithField("target_url", target).Info("Endpoint Resolve")
 
-	logger.Info("Endpoint Resolve")
-
-	url, err := e.store.resolve("www.whatismyclassification.com")
+	url, err := e.store.get(target)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, map[string]string{
 			"error": err.Error(),

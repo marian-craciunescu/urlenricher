@@ -1,16 +1,15 @@
 package connector
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jpillora/backoff"
 	"github.com/marian-craciunescu/urlenricher/models"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
-
-	"github.com/dghubble/oauth1"
-	goauth "github.com/gillesdemey/go-oauth"
 )
 
 var (
@@ -18,12 +17,15 @@ var (
 	urisPaths          = "/uris"
 	MaxIdleConnections = 100
 	RequestTimeout     = 500 * time.Millisecond
+	CategoriesFilePath = "resources/categories.xml"
+	ErrOauthFailed     = errors.New("oauth signature verification failed.Wrong Credentials where used")
 )
 
 type brightCloudConnector struct {
-	key        string
-	secret     string
-	httpClient *http.Client
+	key         string
+	secret      string
+	httpClient  *http.Client
+	CategoryMap map[int]*models.Category
 }
 
 func composeEndpoint(u string) (*url.URL, error) {
@@ -32,13 +34,37 @@ func composeEndpoint(u string) (*url.URL, error) {
 }
 
 func NewBrightCloudConnector(key, secret string) (Connector, error) {
+	m := make(map[int]*models.Category, 0)
+	return &brightCloudConnector{key: key, secret: secret, CategoryMap: m}, nil
+}
 
-	return &brightCloudConnector{key: key, secret: secret}, nil
+func NewBrightCloudConnector2(key, secret string) (*brightCloudConnector, error) {
+	m := make(map[int]*models.Category, 0)
+
+	return &brightCloudConnector{key: key, secret: secret, CategoryMap: m}, nil
 }
 
 type retryable struct {
 	backoff.Backoff
 	maxTries int
+}
+
+func (c *brightCloudConnector) readCategoryFile() ([]byte, error) {
+	// Open our xmlFile
+	xmlFile, err := os.Open(CategoriesFilePath)
+	defer xmlFile.Close()
+	if err != nil {
+		logger.WithError(err).Info("Error opening the categories.xml")
+		return nil, err
+	}
+
+	// read our opened xmlFile as a byte array.
+	byteValue, err := ioutil.ReadAll(xmlFile)
+	if err != nil {
+		logger.WithError(err).Info("Error reading the categories.xml")
+		return nil, err
+	}
+	return byteValue, nil
 }
 
 func (c *brightCloudConnector) Start() error {
@@ -48,6 +74,23 @@ func (c *brightCloudConnector) Start() error {
 		},
 		Timeout: RequestTimeout,
 	}
+	byteValue, err := c.readCategoryFile()
+	if err != nil {
+		return nil
+	}
+
+	categories, err := models.DecodeCATResponse(byteValue)
+	if err != nil {
+		logger.WithError(err).Info("Error decoing the categories.xml")
+		return err
+	}
+
+	for _, cat := range categories.Categories {
+		c.CategoryMap[cat.CatID] = &cat
+	}
+
+	logger.Infof("Loaded %d categories from file", len(c.CategoryMap))
+
 	return nil
 }
 
@@ -56,63 +99,46 @@ func (c *brightCloudConnector) Stop() error {
 }
 
 func (c *brightCloudConnector) Resolve(u string) (*models.URL, error) {
-	logger.WithField("url", u).Info("Return dummy url response")
+	logger.WithField("url", u).Info("Resolving")
 
-	ur, err := composeEndpoint(u)
+	bcRequest, err := NewRequest(u, c)
 	if err != nil {
-		logger.WithError(err).Error("Error composing the url")
-	}
-
-	ts := time.Now().Unix()
-	n := "63839d83b0eb762461e3c164bef291ce"
-	params := map[string]string{
-
-		// any additional headers for your request
-
-		"oauth_nonce":     "b636113e3918e367e5245bde77f85a47",
-		"oauth_timestamp": "1534857839",
-
-		"oauth_consumer_key": c.key,
-		"oauth_version":      "1.0",
-	}
-
-	signature := goauth.Sign("HMAC-SHA1", "GET", ur.String(), params, c.key, c.secret)
-
-	q := ur.Query()
-	q.Set("oauth_signature", signature)
-	q.Set("oauth_signature_method", "HMAC-SHA1")
-	q.Set("oauth_consumer_key", c.key)
-	q.Set("oauth_token", "")
-	q.Set("oauth_nonce", n)
-	q.Set("oauth_timestamp", fmt.Sprintf("%d", ts))
-	q.Set("oauth_version", "1.0")
-
-	encoded := q.Encode()
-	ur.RawQuery = encoded
-
-	logger.WithField("ur", ur.String()).WithField("esc", ur.RequestURI()).Info("sth")
-	request, err := http.NewRequest(http.MethodGet, ur.String(), nil)
-	if err != nil {
-		logger.WithError(err).Error("Error compsing  request")
+		logger.WithError(err).Error("Error composing brightcloud request.")
 		return nil, err
 	}
-	request.Header.Add("Content-type", "text/xml")
 
-	logger.WithField("signature", signature).Info("signature")
+	request, err := http.NewRequest(http.MethodGet, bcRequest.normalizedURL, nil)
+	if err != nil {
+		logger.WithError(err).Error("Error composing http request.")
+		return nil, err
+	}
+	request.Header.Add("Authorization", bcRequest.oauthAuthorization())
+	request.Header.Add("Host", "thor.brightcloud.com:80")
 
-	config := oauth1.NewConfig(c.key, c.secret)
-	token := oauth1.NewToken("", "")
+	fmt.Println(request)
 
-	httpClient := config.Client(oauth1.NoContext, token)
-
-	resp, err := httpClient.Do(request)
+	resp, err := c.httpClient.Do(request)
 	if err != nil {
 		logger.WithError(err).Error("Error reading  response")
 		return nil, err
 	}
 	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Printf("Raw Response Body:\n%v\n", string(body))
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		logger.WithError(err).Error("Error decoding bcws body response")
+		return nil, err
+	}
+	fmt.Printf("Raw UriResponse Body:\n%v\n", string(body))
+
+	r, err := models.DecodeURIResponse(body)
+	if err != nil {
+		logger.WithError(err).Error("Error decoding xml  response")
+		return nil, err
+	}
+
+	if r.StatusCode != 200 {
+		return nil, ErrOauthFailed
+	}
 
 	return &models.URL{
 		Address:    u,
