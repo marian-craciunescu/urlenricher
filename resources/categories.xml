@@ -1,0 +1,424 @@
+<?BrightCloud version=bcap/1.1?>
+<bcap>
+    <response>
+        <status>200</status>
+        <statusmsg>OK</statusmsg>
+        <categories>
+            <cat>
+                <catid>1</catid>
+                <catname>Real Estate</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>2</catid>
+                <catname>Computer and Internet Security</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>3</catid>
+                <catname>Financial Services</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>4</catid>
+                <catname>Business and Economy</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>5</catid>
+                <catname>Computer and Internet Info</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>6</catid>
+                <catname>Auctions</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>7</catid>
+                <catname>Shopping</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>8</catid>
+                <catname>Cult and Occult</catname>
+                <catgroup>Legal Liability</catgroup>
+            </cat>
+            <cat>
+                <catid>9</catid>
+                <catname>Travel</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>10</catid>
+                <catname>Abused Drugs</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>11</catid>
+                <catname>Adult and Pornography</catname>
+                <catgroup>Legal Liability</catgroup>
+            </cat>
+            <cat>
+                <catid>12</catid>
+                <catname>Home and Garden</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>13</catid>
+                <catname>Military</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>14</catid>
+                <catname>Social Network</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>15</catid>
+                <catname>Dead Sites (db Ops only)</catname>
+                <catgroup></catgroup>
+            </cat>
+            <cat>
+                <catid>16</catid>
+                <catname>Stock Advice and Tools</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>17</catid>
+                <catname>Training and Tools</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>18</catid>
+                <catname>Dating</catname>
+                <catgroup></catgroup>
+            </cat>
+            <cat>
+                <catid>19</catid>
+                <catname>Sex Education</catname>
+                <catgroup>Legal Liability</catgroup>
+            </cat>
+            <cat>
+                <catid>20</catid>
+                <catname>Religion</catname>
+                <catgroup>Legal Liability</catgroup>
+            </cat>
+            <cat>
+                <catid>21</catid>
+                <catname>Entertainment and Arts</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>22</catid>
+                <catname>Personal sites and Blogs</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>23</catid>
+                <catname>Legal</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>24</catid>
+                <catname>Local Information</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>25</catid>
+                <catname>Streaming Media</catname>
+                <catgroup>IT Resources</catgroup>
+            </cat>
+            <cat>
+                <catid>26</catid>
+                <catname>Job Search</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>27</catid>
+                <catname>Gambling</catname>
+                <catgroup>Legal Liability</catgroup>
+            </cat>
+            <cat>
+                <catid>28</catid>
+                <catname>Translation</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>29</catid>
+                <catname>Reference and Research</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>30</catid>
+                <catname>Shareware and Freeware</catname>
+                <catgroup>IT Resources</catgroup>
+            </cat>
+            <cat>
+                <catid>31</catid>
+                <catname>Peer to Peer</catname>
+                <catgroup>IT Resources</catgroup>
+            </cat>
+            <cat>
+                <catid>32</catid>
+                <catname>Marijuana</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>33</catid>
+                <catname>Hacking</catname>
+                <catgroup></catgroup>
+            </cat>
+            <cat>
+                <catid>34</catid>
+                <catname>Games</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>35</catid>
+                <catname>Philosophy and Political Advocacy</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>36</catid>
+                <catname>Weapons</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>37</catid>
+                <catname>Pay to Surf</catname>
+                <catgroup>IT Resources</catgroup>
+            </cat>
+            <cat>
+                <catid>38</catid>
+                <catname>Hunting and Fishing</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>39</catid>
+                <catname>Society</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>40</catid>
+                <catname>Educational Institutions</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>41</catid>
+                <catname>Online Greeting cards</catname>
+                <catgroup>IT Resources</catgroup>
+            </cat>
+            <cat>
+                <catid>42</catid>
+                <catname>Sports</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>43</catid>
+                <catname>Swimsuits and Intimate Apparel</catname>
+                <catgroup>Legal Liability</catgroup>
+            </cat>
+            <cat>
+                <catid>44</catid>
+                <catname>Questionable</catname>
+                <catgroup>Legal Liability</catgroup>
+            </cat>
+            <cat>
+                <catid>45</catid>
+                <catname>Kids</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>46</catid>
+                <catname>Hate and Racism</catname>
+                <catgroup>Legal Liability</catgroup>
+            </cat>
+            <cat>
+                <catid>47</catid>
+                <catname>Personal Storage</catname>
+                <catgroup>IT Resources</catgroup>
+            </cat>
+            <cat>
+                <catid>48</catid>
+                <catname>Violence</catname>
+                <catgroup>Legal Liability</catgroup>
+            </cat>
+            <cat>
+                <catid>49</catid>
+                <catname>Keyloggers and Monitoring</catname>
+                <catgroup>IT Resources</catgroup>
+            </cat>
+            <cat>
+                <catid>50</catid>
+                <catname>Search Engines</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>51</catid>
+                <catname>Internet Portals</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>52</catid>
+                <catname>Web Advertisements</catname>
+                <catgroup>IT Resources</catgroup>
+            </cat>
+            <cat>
+                <catid>53</catid>
+                <catname>Cheating</catname>
+                <catgroup>IT Resources</catgroup>
+            </cat>
+            <cat>
+                <catid>54</catid>
+                <catname>Gross</catname>
+                <catgroup>IT Resources</catgroup>
+            </cat>
+            <cat>
+                <catid>55</catid>
+                <catname>Web based email</catname>
+                <catgroup>IT Resources</catgroup>
+            </cat>
+            <cat>
+                <catid>56</catid>
+                <catname>Malware Sites</catname>
+                <catgroup>Security</catgroup>
+            </cat>
+            <cat>
+                <catid>57</catid>
+                <catname>Phishing and Other Frauds</catname>
+                <catgroup>Security</catgroup>
+            </cat>
+            <cat>
+                <catid>58</catid>
+                <catname>Proxy Avoid and Anonymizers</catname>
+                <catgroup>Security</catgroup>
+            </cat>
+            <cat>
+                <catid>59</catid>
+                <catname>Spyware and Adware</catname>
+                <catgroup>Security</catgroup>
+            </cat>
+            <cat>
+                <catid>60</catid>
+                <catname>Music</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>61</catid>
+                <catname>Government</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>62</catid>
+                <catname>Nudity</catname>
+                <catgroup>Legal Liability</catgroup>
+            </cat>
+            <cat>
+                <catid>63</catid>
+                <catname>News and Media</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>64</catid>
+                <catname>Illegal</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>65</catid>
+                <catname>CDNs</catname>
+                <catgroup></catgroup>
+            </cat>
+            <cat>
+                <catid>66</catid>
+                <catname>Internet Communications</catname>
+                <catgroup>IT Resources</catgroup>
+            </cat>
+            <cat>
+                <catid>67</catid>
+                <catname>Bot Nets</catname>
+                <catgroup>Security</catgroup>
+            </cat>
+            <cat>
+                <catid>68</catid>
+                <catname>Abortion</catname>
+                <catgroup>Legal Liability</catgroup>
+            </cat>
+            <cat>
+                <catid>69</catid>
+                <catname>Health and Medicine</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>70</catid>
+                <catname>Confirmed SPAM Sources</catname>
+                <catgroup>Security</catgroup>
+            </cat>
+            <cat>
+                <catid>71</catid>
+                <catname>SPAM URLs</catname>
+                <catgroup>Security</catgroup>
+            </cat>
+            <cat>
+                <catid>72</catid>
+                <catname>Unconfirmed SPAM Sources</catname>
+                <catgroup>Security</catgroup>
+            </cat>
+            <cat>
+                <catid>73</catid>
+                <catname>Open HTTP Proxies</catname>
+                <catgroup>Security</catgroup>
+            </cat>
+            <cat>
+                <catid>74</catid>
+                <catname>Dynamic Comment</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>75</catid>
+                <catname>Parked Domains</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>76</catid>
+                <catname>Alcohol and Tobacco</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>77</catid>
+                <catname>Private IP Addresses</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>78</catid>
+                <catname>Image and Video Search</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>79</catid>
+                <catname>Fashion and Beauty</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>80</catid>
+                <catname>Recreation and Hobbies</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>81</catid>
+                <catname>Motor Vehicles</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>82</catid>
+                <catname>Web Hosting Sites</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+            <cat>
+                <catid>83</catid>
+                <catname>Food and Dining</catname>
+                <catgroup>Productivity</catgroup>
+            </cat>
+        </categories>
+    </response>
+</bcap>

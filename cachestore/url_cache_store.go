@@ -24,12 +24,6 @@ func NewURLCacheStore(size, maxAge int, conn connector.Connector) (*URLCacheStor
 	return &URLCacheStore{lruCache: l, size: size, maxAgeInDays: maxAge, conn: conn}, nil
 }
 
-func (ucs *URLCacheStore) Test() {
-	for i := 0; i < ucs.size; i++ {
-		ucs.lruCache.Add(i, i)
-	}
-}
-
 // evicts all LRU cache to Disk
 func (ucs *URLCacheStore) Dump() error {
 

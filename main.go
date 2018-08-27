@@ -29,13 +29,12 @@ func main() {
 		"secret": conf.ApiSecret,
 	}).Info("Starting with")
 
-	//
-
-	//Consumer Key: d7f469760203b9788367c16fe539c1
-	//Consumer Secret: f3996d096d69d67620735b0020e6ab94d2ab5bfc
 	brigthcloud, err := connector.NewBrightCloudConnector(conf.ApiKey, conf.ApiSecret)
 	if err != nil {
 		panic("Could not create connector.Exiting")
+	}
+	if err = brigthcloud.Start(); err != nil {
+		panic("Could not start brigthcloud connector")
 	}
 
 	urlCache, err := cachestore.NewURLCacheStore(10, 2600, brigthcloud)

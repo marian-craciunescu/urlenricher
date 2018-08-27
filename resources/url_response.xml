@@ -1,0 +1,18 @@
+<?BrightCloud version=bcap/1.1?>
+<bcap>
+    <response>
+        <status>200</status>
+        <statusmsg>OK</statusmsg>
+        <uri>www.whatismyclassification.com</uri>
+        <categories>
+            <cat>
+                <catid>0</catid>
+            </cat>
+            <cat>
+                <catid>1</catid>
+            </cat>
+        </categories>
+        <bcri>40</bcri>
+        <a1cat>0</a1cat>
+    </response>
+</bcap>
