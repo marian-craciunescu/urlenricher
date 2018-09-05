@@ -1,0 +1,20 @@
+<?BrightCloud version=bcap/1.1?>
+<bcap>
+    <response>
+        <status>200</status>
+        <statusmsg>OK</statusmsg>
+        <uri>www.serials.ws</uri>
+        <categories>
+            <cat>
+                <catid>33</catid>
+                <conf>85</conf>
+            </cat>
+            <cat>
+            <catid>44</catid>
+            <conf>85</conf>
+        </cat>
+        </categories>
+        <bcri>92</bcri>
+        <a1cat>1</a1cat>
+    </response>
+</bcap>

@@ -7,7 +7,6 @@ import (
 	"github.com/marian-craciunescu/urlenricher/models"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"os"
 	"time"
 )
@@ -16,8 +15,8 @@ var (
 	restEndpoint       = "http://thor.brightcloud.com:80/rest"
 	urisPaths          = "/uris"
 	MaxIdleConnections = 100
-	RequestTimeout     = 500 * time.Millisecond
-	CategoriesFilePath = "resources/categories.xml"
+	RequestTimeout     = 1000 * time.Millisecond
+	categoriesFilePath = "resources/categories.xml"
 	ErrOauthFailed     = errors.New("oauth signature verification failed.Wrong Credentials where used")
 )
 
@@ -26,11 +25,6 @@ type brightCloudConnector struct {
 	secret      string
 	httpClient  *http.Client
 	CategoryMap map[int]*models.Category
-}
-
-func composeEndpoint(u string) (*url.URL, error) {
-	rawURL := restEndpoint + urisPaths + "/" + u
-	return url.Parse(rawURL)
 }
 
 func NewBrightCloudConnector(key, secret string) (Connector, error) {
@@ -51,7 +45,7 @@ type retryable struct {
 
 func (c *brightCloudConnector) readCategoryFile() ([]byte, error) {
 	// Open our xmlFile
-	xmlFile, err := os.Open(CategoriesFilePath)
+	xmlFile, err := os.Open(categoriesFilePath)
 	defer xmlFile.Close()
 	if err != nil {
 		logger.WithError(err).Info("Error opening the categories.xml")
@@ -140,10 +134,36 @@ func (c *brightCloudConnector) Resolve(u string) (*models.URL, error) {
 		return nil, ErrOauthFailed
 	}
 
-	return &models.URL{
-		Address:    u,
-		Reputation: "bad",
-		Ts:         time.Now().UTC(),
-	}, nil
+	return c.buildURL(r)
+}
 
+func (c *brightCloudConnector) buildURL(response *models.UriResponse) (*models.URL, error) {
+
+	u := &models.URL{
+		Address:              response.URI,
+		ReputationPercentage: response.Bcri,
+		SubdomainNumber:      response.A1cat,
+		Ts:                   time.Now().UTC(),
+	}
+
+	allCategories := make([]models.UrlCategories, 0)
+	for i, cat := range response.Categories {
+
+		urlCategory := models.UrlCategories{
+			ID: cat.CatID,
+		}
+
+		base, ok := c.CategoryMap[cat.CatID]
+		logger.WithField("foundCat", base).Info("Retrieved from cat map")
+		if !ok {
+			logger.WithField("cat_no", i).WithField("cat_id", cat.CatID).Info("No category found for id")
+		} else {
+			urlCategory.Name = base.CatName
+			urlCategory.Confidence = cat.Confidence
+			urlCategory.Group = base.CatGroup
+		}
+		allCategories = append(allCategories, urlCategory)
+	}
+	u.Categories = allCategories
+	return u, nil
 }

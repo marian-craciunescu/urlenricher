@@ -1,6 +1,7 @@
 package connector
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -9,7 +10,7 @@ func Test_StartStop(t *testing.T) {
 	a := assert.New(t)
 	key := "aaaaaaaaaaaa"
 	secret := "bbbbbbbbbbbbbbbbbbbb"
-	CategoriesFilePath = "../" + CategoriesFilePath
+	categoriesFilePath = "../" + categoriesFilePath
 	c, err := NewBrightCloudConnector2(key, secret)
 	a.NoError(err)
 
@@ -18,13 +19,17 @@ func Test_StartStop(t *testing.T) {
 	a.Equal(83, len(c.CategoryMap))
 	err = c.Stop()
 	a.NoError(err)
+	for i, cc := range c.CategoryMap {
+		fmt.Println(cc)
+		fmt.Println(c.CategoryMap[i])
+	}
 }
 
 func Test_ResolveInvalidOauth(t *testing.T) {
 	a := assert.New(t)
 	key := "aaaaaaaaaaaa"
 	secret := "bbbbbbbbbbbbbbbbbbbb"
-	CategoriesFilePath = "../" + CategoriesFilePath
+	categoriesFilePath = "../" + categoriesFilePath
 	c, err := NewBrightCloudConnector2(key, secret)
 	a.NoError(err)
 
