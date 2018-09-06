@@ -9,7 +9,7 @@ func Test_StartStop(t *testing.T) {
 	a := assert.New(t)
 	key := "aaaaaaaaaaaa"
 	secret := "bbbbbbbbbbbbbbbbbbbb"
-	CategoriesFilePath = "../" + CategoriesFilePath
+	categoriesFilePath = "../" + categoriesFilePath
 	c, err := NewBrightCloudConnector2(key, secret)
 	a.NoError(err)
 
@@ -18,13 +18,15 @@ func Test_StartStop(t *testing.T) {
 	a.Equal(83, len(c.CategoryMap))
 	err = c.Stop()
 	a.NoError(err)
+
+	a.Equal("Internet Communications", c.CategoryMap[66].CatName)
 }
 
 func Test_ResolveInvalidOauth(t *testing.T) {
 	a := assert.New(t)
 	key := "aaaaaaaaaaaa"
 	secret := "bbbbbbbbbbbbbbbbbbbb"
-	CategoriesFilePath = "../" + CategoriesFilePath
+	categoriesFilePath = "../" + categoriesFilePath
 	c, err := NewBrightCloudConnector2(key, secret)
 	a.NoError(err)
 
