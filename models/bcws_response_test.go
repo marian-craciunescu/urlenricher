@@ -46,7 +46,7 @@ func TestDecodeResponseComplex(t *testing.T) {
 	a.NoError(err)
 	a.Equal(200, r.StatusCode)
 	a.Equal(92, r.Bcri)
-	a.Equal(0, r.A1cat)
+	a.Equal(1, r.A1cat)
 	a.Equal(33, r.Categories[0].CatID)
 	a.Equal(85, r.Categories[0].Confidence)
 	a.Equal(44, r.Categories[1].CatID)

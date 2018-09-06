@@ -24,16 +24,16 @@ type brightCloudConnector struct {
 	key         string
 	secret      string
 	httpClient  *http.Client
-	CategoryMap map[int]*models.Category
+	CategoryMap map[int]models.Category
 }
 
 func NewBrightCloudConnector(key, secret string) (Connector, error) {
-	m := make(map[int]*models.Category, 0)
+	m := make(map[int]models.Category, 0)
 	return &brightCloudConnector{key: key, secret: secret, CategoryMap: m}, nil
 }
 
 func NewBrightCloudConnector2(key, secret string) (*brightCloudConnector, error) {
-	m := make(map[int]*models.Category, 0)
+	m := make(map[int]models.Category, 0)
 
 	return &brightCloudConnector{key: key, secret: secret, CategoryMap: m}, nil
 }
@@ -80,7 +80,7 @@ func (c *brightCloudConnector) Start() error {
 	}
 
 	for _, cat := range categories.Categories {
-		c.CategoryMap[cat.CatID] = &cat
+		c.CategoryMap[cat.CatID] = cat
 	}
 
 	logger.Infof("Loaded %d categories from file", len(c.CategoryMap))

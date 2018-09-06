@@ -1,7 +1,6 @@
 package connector
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -19,10 +18,8 @@ func Test_StartStop(t *testing.T) {
 	a.Equal(83, len(c.CategoryMap))
 	err = c.Stop()
 	a.NoError(err)
-	for i, cc := range c.CategoryMap {
-		fmt.Println(cc)
-		fmt.Println(c.CategoryMap[i])
-	}
+
+	a.Equal("Internet Communications", c.CategoryMap[66].CatName)
 }
 
 func Test_ResolveInvalidOauth(t *testing.T) {
