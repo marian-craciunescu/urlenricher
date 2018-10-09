@@ -40,6 +40,7 @@ func NewAPIServer(config *conf.Config, cacheEndpoint cachestore.Endpoint) API {
 
 	e.GET("/info", api.info)
 	e.GET("/resolve", api.resolve)
+	e.POST("dump", api.dump)
 
 	api.echo = e
 	return &api
@@ -48,6 +49,11 @@ func NewAPIServer(config *conf.Config, cacheEndpoint cachestore.Endpoint) API {
 func (api *APIServer) resolve(ctx echo.Context) error {
 	logger.Info("Resolve api_server")
 	return api.cache.Resolve(ctx)
+}
+
+func (api *APIServer) dump(ctx echo.Context) error {
+	logger.Info("Dump api_server")
+	return api.cache.Dump(ctx)
 }
 
 func (api *APIServer) info(ctx echo.Context) error {

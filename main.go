@@ -37,9 +37,12 @@ func main() {
 		panic("Could not start brigthcloud connector")
 	}
 
-	urlCache, err := cachestore.NewURLCacheStore(10, 2600, brigthcloud)
+	urlCache, err := cachestore.NewURLCacheStore(50000, 2600, brigthcloud, "datadir")
 	if err != nil {
 		panic("Could not create cache store.Exiting")
+	}
+	if err := urlCache.Start(); err != nil {
+		logger.WithError(err).Error("Failed to load cache from disk")
 	}
 
 	cacheEndpoint := cachestore.NewURLEndpoint(urlCache)
@@ -52,7 +55,13 @@ func main() {
 	}
 
 	waitForTerminationAndExit(func() {
-		err := apiServer.Stop()
+		d, err := urlCache.Dump()
+		if err != nil {
+			logger.WithError(err).Error("Failed to correctly dump  cache")
+		}
+		logger.WithField("dump_size", d).Info("Wrote on disk a dump with")
+
+		err = apiServer.Stop()
 		if err != nil {
 			logger.WithError(err).Error("Failed to correctly stop api server")
 		}
