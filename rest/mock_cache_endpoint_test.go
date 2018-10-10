@@ -46,6 +46,18 @@ func (mr *MockCacheEndpointMockRecorder) Delete(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockCacheEndpoint)(nil).Delete), arg0)
 }
 
+// Dump mocks base method
+func (m *MockCacheEndpoint) Dump(arg0 echo.Context) error {
+	ret := m.ctrl.Call(m, "Dump", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Dump indicates an expected call of Dump
+func (mr *MockCacheEndpointMockRecorder) Dump(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Dump", reflect.TypeOf((*MockCacheEndpoint)(nil).Dump), arg0)
+}
+
 // Get mocks base method
 func (m *MockCacheEndpoint) Get(arg0 string) (*models.URL, error) {
 	ret := m.ctrl.Call(m, "Get", arg0)

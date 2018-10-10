@@ -28,7 +28,11 @@ func NewURLCacheStore(size, maxAge int, conn connector.Connector, path string) (
 	if err != nil {
 		return nil, err
 	}
-	return &URLCacheStore{lruCache: l, size: size, maxAgeInDays: maxAge, conn: conn, dumpPath: filepath.Join(".", path)}, nil
+	return &URLCacheStore{lruCache: l, size: size, maxAgeInDays: maxAge, conn: conn, dumpPath: path}, nil
+}
+
+func (ucs *URLCacheStore) Size() int {
+	return ucs.lruCache.Len()
 }
 
 func (ucs *URLCacheStore) Start() error {
@@ -56,27 +60,12 @@ func (ucs *URLCacheStore) Dump() (int, error) {
 		if !ok {
 			return -1, ErrLRUCacheValue
 		}
-		file, err := os.OpenFile(filepath.Join(ucs.dumpPath, "/", original.Address), os.O_RDWR|os.O_CREATE, 0666)
+
+		err := ucs.writeJSONDumpFile(original)
 		if err != nil {
-			logger.WithError(err).WithField("file", filepath.Join(ucs.dumpPath, original.Address)).Error("Could not open file for writing")
-			return -1, err
-		}
-
-		logger.WithField("file", file.Name()).Info("Writing file")
-
-		defer file.Close()
-
-		bytes, err := json.Marshal(original)
-		if err != nil {
-			logger.WithError(err).Error("Could not marshal data")
+			logger.WithField("i", i).Error("Failed to dump file with index")
 			continue
 		}
-		n, err := file.Write(bytes)
-		if err != nil {
-			logger.WithError(err).WithField("total_bytes_written", n).Error("Could not write data in file")
-			continue
-		}
-		logger.WithField("i", i).WithField("key", key).Debug("Wrote on disk number")
 	}
 	return len(allKeys), nil
 }
@@ -97,35 +86,69 @@ func (ucs *URLCacheStore) load() error {
 	}
 
 	for _, file := range files {
-		jsonFile, err := os.Open(filepath.Join(ucs.dumpPath, file.Name()))
-		defer jsonFile.Close()
+		u, err := ucs.readJSONDumpFile(file)
 		if err != nil {
-			logger.WithError(err).WithField("filename", file.Name()).Error("Could not open file for reading")
-		} else {
-
-			// read our opened xmlFile as a byte array.
-			byteValue, err := ioutil.ReadAll(jsonFile)
-			if err != nil {
-				logger.WithError(err).WithField("filename", file.Name()).Error("Could not read file")
-				continue
-			}
-			var u *models.URL
-			if err := json.Unmarshal(byteValue, &u); err != nil {
-				logger.WithError(err).WithField("filename", file.Name()).Error("Could not decode  file as json")
-				continue
-			}
-			if duration := time.Now().Sub(u.Ts).Hours() / 24; int(duration) <= ucs.maxAgeInDays {
-				logger.WithField("url", u.Address).WithField("daysPassed", duration).Info("ReSaving")
-				err := ucs.save(u.Address, u)
-				if err != nil {
-					logger.WithError(err).Error("Error resaving url ")
-				}
-			}
-
+			continue
 		}
+		if duration := time.Now().Sub(u.Ts).Hours() / 24; int(duration) <= ucs.maxAgeInDays {
+			logger.WithField("url", u.Address).WithField("daysPassed", duration).Info("ReSaving")
+			err := ucs.save(u.Address, u)
+			if err != nil {
+				logger.WithError(err).Error("Error resaving url ")
+			}
+		}
+
+	}
+	return nil
+}
+
+func (ucs *URLCacheStore) writeJSONDumpFile(original *models.URL) error {
+	file, err := os.OpenFile(filepath.Join(ucs.dumpPath, "/", original.Address), os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		logger.WithError(err).WithField("file", filepath.Join(ucs.dumpPath, original.Address)).Error("Could not open file for writing")
+		return err
 	}
 
+	logger.WithField("file", file.Name()).Info("Writing file")
+
+	defer file.Close()
+
+	bytes, err := json.Marshal(original)
+	if err != nil {
+		logger.WithError(err).Error("Could not marshal data")
+		return err
+	}
+	n, err := file.Write(bytes)
+	if err != nil {
+		logger.WithError(err).WithField("total_bytes_written", n).Error("Could not write data in file")
+		return err
+	}
+	logger.WithField("key", original.Address).Debug("Wrote on disk number")
 	return nil
+}
+
+func (ucs *URLCacheStore) readJSONDumpFile(file os.FileInfo) (*models.URL, error) {
+	jsonFile, err := os.Open(filepath.Join(ucs.dumpPath, file.Name()))
+	defer jsonFile.Close()
+
+	if err != nil {
+		logger.WithError(err).WithField("filename", file.Name()).Error("Could not open file for reading")
+		return nil, err
+	} else {
+
+		// read our opened xmlFile as a byte array.
+		byteValue, err := ioutil.ReadAll(jsonFile)
+		if err != nil {
+			logger.WithError(err).WithField("filename", file.Name()).Error("Could not read file")
+			return nil, err
+		}
+		var u *models.URL
+		if err := json.Unmarshal(byteValue, &u); err != nil {
+			logger.WithError(err).WithField("filename", file.Name()).Error("Could not decode  file as json")
+			return nil, err
+		}
+		return u, err
+	}
 }
 
 func (ucs *URLCacheStore) save(originalURL string, u *models.URL) error {
