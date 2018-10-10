@@ -1,42 +1,182 @@
 package cachestore
 
 import (
+	"encoding/json"
 	"errors"
+	"expvar"
 	"github.com/hashicorp/golang-lru"
 	"github.com/marian-craciunescu/urlenricher/connector"
+	"github.com/marian-craciunescu/urlenricher/metrics"
 	"github.com/marian-craciunescu/urlenricher/models"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"time"
 )
 
 var ErrLRUCacheValue = errors.New("Unkown value was found ")
+var ErrLRUCacheError = errors.New("Error getting value from cache ")
 
 type URLCacheStore struct {
 	lruCache     *lru.Cache
 	size         int
 	maxAgeInDays int
 	conn         connector.Connector
+	dumpPath     string
+
+	metric                *metrics.Metric
+	mResolvedOkCounter    *expvar.Int
+	mResolvedErrorCounter *expvar.Int
+	mTotalGetCounter      *expvar.Int
+	mTotalEvictedCounter  *expvar.Int
+	mInCacheElements      *expvar.Int
 }
 
-func NewURLCacheStore(size, maxAge int, conn connector.Connector) (*URLCacheStore, error) {
+func NewURLCacheStore(size, maxAge int, conn connector.Connector, path string, manager metrics.MetricManager) (*URLCacheStore, error) {
 	l, err := lru.New(size)
 	if err != nil {
 		return nil, err
 	}
-	return &URLCacheStore{lruCache: l, size: size, maxAgeInDays: maxAge, conn: conn}, nil
+	cacheMetric := manager.RegisterMetric("cache")
+	store := URLCacheStore{lruCache: l, size: size, maxAgeInDays: maxAge, conn: conn, dumpPath: path, metric: cacheMetric}
+
+	store.initMetrics()
+	return &store, nil
+}
+
+func (ucs *URLCacheStore) Size() int {
+	return ucs.lruCache.Len()
+}
+
+func (ucs *URLCacheStore) Start() error {
+	err := ucs.load()
+	if err != nil {
+		logger.Info("Could not correctly load previous on-disk cache")
+		return err
+	}
+	logger.WithField("cache_size", len(ucs.lruCache.Keys())).Info("Loaded from disk")
+
+	return nil
 }
 
 // evicts all LRU cache to Disk
-func (ucs *URLCacheStore) Dump() error {
+func (ucs *URLCacheStore) Dump() (int, error) {
 
-	return models.ErrNotImplemented
+	allKeys := ucs.lruCache.Keys()
+
+	for i, key := range allKeys {
+		u, ok := ucs.lruCache.Get(key)
+		if !ok {
+			logger.WithField("url", u).Debug("Could not dump")
+			return -1, ErrLRUCacheError
+		}
+		original, ok := u.(*models.URL)
+		if !ok {
+			return -1, ErrLRUCacheValue
+		}
+
+		err := ucs.writeJSONDumpFile(original)
+		if err != nil {
+			logger.WithField("i", i).Error("Failed to dump file with index")
+			continue
+		}
+	}
+	return len(allKeys), nil
 }
 
 func (ucs *URLCacheStore) load() error {
-	return models.ErrNotImplemented
+	logger.WithField("path", ucs.dumpPath).Info("Using path")
+	err := os.MkdirAll(ucs.dumpPath, 0777)
+	if err != nil {
+		logger.WithError(err).Error("Error creating dump directory")
+		return err
+	}
+
+	files, err := ioutil.ReadDir(ucs.dumpPath)
+	logger.WithField("f", files).Info("Files in folder")
+	if err != nil {
+		logger.WithError(err).WithField("path", ucs.dumpPath).Error("Could not read data dir for files")
+		return err
+	}
+
+	for _, file := range files {
+		u, err := ucs.readJSONDumpFile(file)
+		if err != nil {
+			continue
+		}
+		if duration := time.Now().Sub(u.Ts).Hours() / 24; int(duration) <= ucs.maxAgeInDays {
+			logger.WithField("url", u.Address).WithField("daysPassed", duration).Info("ReSaving")
+			err := ucs.save(u.Address, u)
+			if err != nil {
+				logger.WithError(err).Error("Error resaving url ")
+			}
+		}
+
+	}
+	return nil
+}
+
+func (ucs *URLCacheStore) writeJSONDumpFile(original *models.URL) error {
+	file, err := os.OpenFile(filepath.Join(ucs.dumpPath, "/", original.Address), os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		logger.WithError(err).WithField("file", filepath.Join(ucs.dumpPath, original.Address)).Error("Could not open file for writing")
+		return err
+	}
+
+	logger.WithField("file", file.Name()).Info("Writing file")
+
+	defer file.Close()
+
+	bytes, err := json.Marshal(original)
+	if err != nil {
+		logger.WithError(err).Error("Could not marshal data")
+		return err
+	}
+	n, err := file.Write(bytes)
+	if err != nil {
+		logger.WithError(err).WithField("total_bytes_written", n).Error("Could not write data in file")
+		return err
+	}
+	logger.WithField("key", original.Address).Debug("Wrote on disk number")
+	return nil
+}
+
+func (ucs *URLCacheStore) readJSONDumpFile(file os.FileInfo) (*models.URL, error) {
+	jsonFile, err := os.Open(filepath.Join(ucs.dumpPath, file.Name()))
+	defer jsonFile.Close()
+
+	if err != nil {
+		logger.WithError(err).WithField("filename", file.Name()).Error("Could not open file for reading")
+		return nil, err
+	} else {
+
+		// read our opened xmlFile as a byte array.
+		byteValue, err := ioutil.ReadAll(jsonFile)
+		if err != nil {
+			logger.WithError(err).WithField("filename", file.Name()).Error("Could not read file")
+			return nil, err
+		}
+		var u *models.URL
+		if err := json.Unmarshal(byteValue, &u); err != nil {
+			logger.WithError(err).WithField("filename", file.Name()).Error("Could not decode  file as json")
+			return nil, err
+		}
+		return u, err
+	}
 }
 
 func (ucs *URLCacheStore) save(originalURL string, u *models.URL) error {
 	evicted := ucs.lruCache.Add(originalURL, u)
+	if evicted {
+		ucs.mTotalEvictedCounter.Add(1)
+	} else {
+		ucs.mInCacheElements.Add(1)
+	}
 	logger.WithField("url", originalURL).WithField("evicted", evicted).Debug("Saved url")
+	err := ucs.writeJSONDumpFile(u)
+	if err != nil {
+		logger.WithError(err).Info("Error writing to disk")
+	}
 	return nil
 }
 
@@ -50,7 +190,7 @@ func (ucs *URLCacheStore) get(u string) (*models.URL, error) {
 	if !ok {
 		return nil, ErrLRUCacheValue
 	}
-
+	ucs.mTotalGetCounter.Add(1)
 	return original, nil
 
 }
@@ -63,6 +203,7 @@ func (ucs *URLCacheStore) resolve(u string) (*models.URL, error) {
 	logger.Info("cache store resolve")
 	url, err := ucs.conn.Resolve(u)
 	if err != nil {
+		ucs.mResolvedErrorCounter.Add(1)
 		logger.WithError(err).Error("Error resolving url.")
 		return nil, err
 	}
@@ -71,5 +212,14 @@ func (ucs *URLCacheStore) resolve(u string) (*models.URL, error) {
 		logger.WithError(err).Error("Error saving url.")
 		return nil, err
 	}
+	ucs.mResolvedOkCounter.Add(1)
 	return url, nil
+}
+
+func (ucs *URLCacheStore) initMetrics() {
+	ucs.mResolvedOkCounter = ucs.metric.AddInt("total_ok_resolving_url_counter")
+	ucs.mResolvedErrorCounter = ucs.metric.AddInt("total_error_resolving_url_counter")
+	ucs.mTotalGetCounter = ucs.metric.AddInt("total_get_request_counter")
+	ucs.mTotalEvictedCounter = ucs.metric.AddInt("on_save_cache_evict_counter")
+	ucs.mInCacheElements = ucs.metric.AddInt("in_cache_size")
 }

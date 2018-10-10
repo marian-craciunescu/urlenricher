@@ -16,7 +16,7 @@ type Config struct {
 	ElkLogging bool         `mapstructure:"use_elk"`
 	ApiKey     string       `mapstructure:"api_key"`
 	ApiSecret  string       `mapstructure:"api_secret"`
-	//Redis      redis.Config
+	DataPath   string       `mapstructure:"path"`
 }
 
 //ErrAppPropertiesNotFound is used when the property file is missing at the reading time
@@ -28,6 +28,7 @@ func init() {
 	pflag.String("log_level", "debug", "set log level")
 	pflag.String("api_key", "", "set api key for brightcloud")
 	pflag.String("api_secret", "", "set api secret for brightcloud")
+	pflag.String("path", "datadir", "set path to on-disk saving ")
 
 	pflag.Parse()
 }

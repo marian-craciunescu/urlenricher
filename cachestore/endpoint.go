@@ -1,9 +1,11 @@
 package cachestore
 
 import (
+	"fmt"
 	"github.com/labstack/echo"
 	"github.com/marian-craciunescu/urlenricher/models"
 	"net/http"
+	"time"
 )
 
 type Endpoint interface {
@@ -11,6 +13,7 @@ type Endpoint interface {
 	Get(baseURL string) (*models.URL, error)
 	Delete(baseURL string) error
 	Resolve(ctx echo.Context) error
+	Dump(ctx echo.Context) error
 }
 
 type urlEndpoint struct {
@@ -37,11 +40,23 @@ func (e *urlEndpoint) Resolve(ctx echo.Context) error {
 
 	url, err := e.store.get(target)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, map[string]string{
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{
 			"error": err.Error(),
 		})
-		return err
 	}
-	ctx.JSON(http.StatusOK, url)
-	return nil
+	return ctx.JSON(http.StatusOK, url)
+
+}
+
+func (e *urlEndpoint) Dump(ctx echo.Context) error {
+	d, err := e.store.Dump()
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
+	}
+	return ctx.JSON(http.StatusOK, map[string]string{
+		"dump_ts":         time.Now().UTC().Format(time.RFC3339),
+		"total_dump_size": fmt.Sprintf("%d", d),
+	})
 }

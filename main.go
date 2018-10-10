@@ -4,6 +4,7 @@ import (
 	"github.com/marian-craciunescu/urlenricher/cachestore"
 	"github.com/marian-craciunescu/urlenricher/config"
 	"github.com/marian-craciunescu/urlenricher/connector"
+	"github.com/marian-craciunescu/urlenricher/metrics"
 	"github.com/marian-craciunescu/urlenricher/rest"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -29,6 +30,9 @@ func main() {
 		"secret": conf.ApiSecret,
 	}).Info("Starting with")
 
+	metricManager := metrics.NewMetricManager()
+	metricEndpoint := metrics.NewMetricEnpoint(metricManager)
+
 	brigthcloud, err := connector.NewBrightCloudConnector(conf.ApiKey, conf.ApiSecret)
 	if err != nil {
 		panic("Could not create connector.Exiting")
@@ -37,14 +41,17 @@ func main() {
 		panic("Could not start brigthcloud connector")
 	}
 
-	urlCache, err := cachestore.NewURLCacheStore(10, 2600, brigthcloud)
+	urlCache, err := cachestore.NewURLCacheStore(50000, 2600, brigthcloud, conf.DataPath, metricManager)
 	if err != nil {
 		panic("Could not create cache store.Exiting")
+	}
+	if err := urlCache.Start(); err != nil {
+		logger.WithError(err).Error("Failed to load cache from disk")
 	}
 
 	cacheEndpoint := cachestore.NewURLEndpoint(urlCache)
 
-	apiServer := rest.NewAPIServer(conf, cacheEndpoint)
+	apiServer := rest.NewAPIServer(conf, cacheEndpoint, metricEndpoint)
 	err = apiServer.Start()
 	if err != nil {
 		log.WithError(err).Error("Error starting rest server")
@@ -52,9 +59,15 @@ func main() {
 	}
 
 	waitForTerminationAndExit(func() {
-		err := apiServer.Stop()
+		d, err := urlCache.Dump()
 		if err != nil {
-			logger.WithError(err).Error("Failed to correctly stop api server")
+			log.WithError(err).Error("Failed to correctly dump  cache")
+		}
+		log.WithField("dump_size", d).Info("Wrote on disk a dump with")
+
+		err = apiServer.Stop()
+		if err != nil {
+			log.WithError(err).Error("Failed to correctly stop api server")
 		}
 	})
 
