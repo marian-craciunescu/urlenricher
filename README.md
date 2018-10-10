@@ -41,8 +41,7 @@ curl -XGET http://127.0.0.1:8081/resolve?target=www.google.com
 
 # ROADMAP
 1) Add more tests and Benchmark
-2) Add persistence on disk for the LRU cache (at every restart the LRU cache is deleted)
-3) Add more connectors.
-4) Add swagger for the REST api description
+2) Add more connectors.
+3) Add swagger for the REST api description
 
 
