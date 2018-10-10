@@ -3,8 +3,10 @@ package cachestore
 import (
 	"encoding/json"
 	"errors"
+	"expvar"
 	"github.com/hashicorp/golang-lru"
 	"github.com/marian-craciunescu/urlenricher/connector"
+	"github.com/marian-craciunescu/urlenricher/metrics"
 	"github.com/marian-craciunescu/urlenricher/models"
 	"io/ioutil"
 	"os"
@@ -21,14 +23,25 @@ type URLCacheStore struct {
 	maxAgeInDays int
 	conn         connector.Connector
 	dumpPath     string
+
+	metric                *metrics.Metric
+	mResolvedOkCounter    *expvar.Int
+	mResolvedErrorCounter *expvar.Int
+	mTotalGetCounter      *expvar.Int
+	mTotalEvictedCounter  *expvar.Int
+	mInCacheElements      *expvar.Int
 }
 
-func NewURLCacheStore(size, maxAge int, conn connector.Connector, path string) (*URLCacheStore, error) {
+func NewURLCacheStore(size, maxAge int, conn connector.Connector, path string, manager metrics.MetricManager) (*URLCacheStore, error) {
 	l, err := lru.New(size)
 	if err != nil {
 		return nil, err
 	}
-	return &URLCacheStore{lruCache: l, size: size, maxAgeInDays: maxAge, conn: conn, dumpPath: path}, nil
+	cacheMetric := manager.RegisterMetric("cache")
+	store := URLCacheStore{lruCache: l, size: size, maxAgeInDays: maxAge, conn: conn, dumpPath: path, metric: cacheMetric}
+
+	store.initMetrics()
+	return &store, nil
 }
 
 func (ucs *URLCacheStore) Size() int {
@@ -42,6 +55,7 @@ func (ucs *URLCacheStore) Start() error {
 		return err
 	}
 	logger.WithField("cache_size", len(ucs.lruCache.Keys())).Info("Loaded from disk")
+
 	return nil
 }
 
@@ -153,7 +167,16 @@ func (ucs *URLCacheStore) readJSONDumpFile(file os.FileInfo) (*models.URL, error
 
 func (ucs *URLCacheStore) save(originalURL string, u *models.URL) error {
 	evicted := ucs.lruCache.Add(originalURL, u)
+	if evicted {
+		ucs.mTotalEvictedCounter.Add(1)
+	} else {
+		ucs.mInCacheElements.Add(1)
+	}
 	logger.WithField("url", originalURL).WithField("evicted", evicted).Debug("Saved url")
+	err := ucs.writeJSONDumpFile(u)
+	if err != nil {
+		logger.WithError(err).Info("Error writing to disk")
+	}
 	return nil
 }
 
@@ -167,6 +190,7 @@ func (ucs *URLCacheStore) get(u string) (*models.URL, error) {
 	if !ok {
 		return nil, ErrLRUCacheValue
 	}
+	ucs.mTotalGetCounter.Add(1)
 	return original, nil
 
 }
@@ -179,6 +203,7 @@ func (ucs *URLCacheStore) resolve(u string) (*models.URL, error) {
 	logger.Info("cache store resolve")
 	url, err := ucs.conn.Resolve(u)
 	if err != nil {
+		ucs.mResolvedErrorCounter.Add(1)
 		logger.WithError(err).Error("Error resolving url.")
 		return nil, err
 	}
@@ -187,5 +212,14 @@ func (ucs *URLCacheStore) resolve(u string) (*models.URL, error) {
 		logger.WithError(err).Error("Error saving url.")
 		return nil, err
 	}
+	ucs.mResolvedOkCounter.Add(1)
 	return url, nil
+}
+
+func (ucs *URLCacheStore) initMetrics() {
+	ucs.mResolvedOkCounter = ucs.metric.AddInt("total_ok_resolving_url_counter")
+	ucs.mResolvedErrorCounter = ucs.metric.AddInt("total_error_resolving_url_counter")
+	ucs.mTotalGetCounter = ucs.metric.AddInt("total_get_request_counter")
+	ucs.mTotalEvictedCounter = ucs.metric.AddInt("on_save_cache_evict_counter")
+	ucs.mInCacheElements = ucs.metric.AddInt("in_cache_size")
 }

@@ -1,32 +1,49 @@
 package cachestore
 
 import (
-	"github.com/golang/mock/gomock"
-	"github.com/marian-craciunescu/urlenricher/connector"
-	"github.com/marian-craciunescu/urlenricher/models"
-	"github.com/stretchr/testify/assert"
+	"expvar"
 	"io/ioutil"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/golang/mock/gomock"
+	"github.com/marian-craciunescu/urlenricher/connector"
+	"github.com/marian-craciunescu/urlenricher/metrics"
+	"github.com/marian-craciunescu/urlenricher/models"
+	"github.com/stretchr/testify/assert"
 )
 
 //go:generate mockgen -destination=mock_connector_test.go -mock_names Endpoint=MockConnector -package=cachestore github.com/marian-craciunescu/urlenricher/connector Connector
-func TestURLCacheStore_Dump(t *testing.T) {
+//go:generate mockgen -destination=mock_metric_manager_test.go  -package=cachestore github.com/marian-craciunescu/urlenricher/metrics MetricManager
+
+func initStore(t *testing.T) (*URLCacheStore, string, *MockConnector) {
 	a := assert.New(t)
 
 	name, err := ioutil.TempDir("/tmp", "test")
 	a.NoError(err)
-	defer os.Remove(name)
 
 	mockCtrl := gomock.NewController(t)
 	mockCon := NewMockConnector(mockCtrl)
-	store, err := NewURLCacheStore(10, 11, mockCon, name)
+	metricMgr := NewMockMetricManager(mockCtrl)
+	metric := metrics.Metric{name, expvar.NewMap(name)}
+	metricMgr.EXPECT().RegisterMetric("cache").Return(&metric)
+
+	store, err := NewURLCacheStore(10, 11, mockCon, name, metricMgr)
 	a.NoError(err)
+
+	return store, name, mockCon
+}
+
+func TestURLCacheStore_Dump(t *testing.T) {
+	a := assert.New(t)
+
+	store, tmpDirName, _ := initStore(t)
+	defer os.Remove(tmpDirName)
 
 	u1 := createUrl("www.google.com", 80, 0)
 	u2 := createUrl("www.facebook.com", 70, 1)
-	err = store.save(u1.Address, u1)
+	err := store.save(u1.Address, u1)
 	a.NoError(err)
 	err = store.save(u2.Address, u2)
 	a.NoError(err)
@@ -39,31 +56,20 @@ func TestURLCacheStore_Dump(t *testing.T) {
 func TestStart(t *testing.T) {
 	a := assert.New(t)
 
-	name, err := ioutil.TempDir("/tmp", "test")
-	a.NoError(err)
-	defer os.Remove(name)
-	mockCtrl := gomock.NewController(t)
-	mockCon := NewMockConnector(mockCtrl)
-	store, err := NewURLCacheStore(10, 11, mockCon, name)
-	a.NoError(err)
+	store, tmpDirName, _ := initStore(t)
+	defer os.Remove(tmpDirName)
 
-	err = store.Start()
+	err := store.Start()
 	a.NoError(err)
-
 }
 
 func TestSanityRestart(t *testing.T) {
 	a := assert.New(t)
 
-	name, err := ioutil.TempDir("/tmp", "test")
-	a.NoError(err)
-	defer os.Remove(name)
-	mockCtrl := gomock.NewController(t)
-	mockCon := NewMockConnector(mockCtrl)
-	store, err := NewURLCacheStore(10, 11, mockCon, name)
-	a.NoError(err)
+	store, tmpDirName, _ := initStore(t)
+	defer os.Remove(tmpDirName)
 
-	err = store.Start()
+	err := store.Start()
 	a.NoError(err)
 
 	u1 := createUrl("www.google.com", 80, 0)
@@ -77,7 +83,13 @@ func TestSanityRestart(t *testing.T) {
 	a.NoError(err)
 	a.Equal(2, n)
 
-	newStore, err := NewURLCacheStore(10, 11, mockCon, name)
+	mockCtrl := gomock.NewController(t)
+	mockCon := NewMockConnector(mockCtrl)
+	metricMgr := NewMockMetricManager(mockCtrl)
+	metric := metrics.Metric{"sth", expvar.NewMap("sth")}
+	metricMgr.EXPECT().RegisterMetric("cache").Return(&metric)
+
+	newStore, err := NewURLCacheStore(10, 11, mockCon, tmpDirName, metricMgr)
 	a.NoError(err)
 	err = newStore.Start()
 	a.NoError(err)
@@ -91,15 +103,10 @@ func TestSanityRestart(t *testing.T) {
 func TestResolve(t *testing.T) {
 	a := assert.New(t)
 
-	name, err := ioutil.TempDir("/tmp", "test")
-	a.NoError(err)
-	defer os.Remove(name)
-	mockCtrl := gomock.NewController(t)
-	mockCon := NewMockConnector(mockCtrl)
-	store, err := NewURLCacheStore(10, 11, mockCon, name)
-	a.NoError(err)
+	store, tmpDirName, mockCon := initStore(t)
+	defer os.Remove(tmpDirName)
 
-	err = store.Start()
+	err := store.Start()
 	a.NoError(err)
 
 	u1 := createUrl("www.google.com", 80, 0)
@@ -113,15 +120,10 @@ func TestResolve(t *testing.T) {
 func TestResolveError(t *testing.T) {
 	a := assert.New(t)
 
-	name, err := ioutil.TempDir("/tmp", "test")
-	a.NoError(err)
-	defer os.Remove(name)
-	mockCtrl := gomock.NewController(t)
-	mockCon := NewMockConnector(mockCtrl)
-	store, err := NewURLCacheStore(10, 11, mockCon, name)
-	a.NoError(err)
+	store, tmpDirName, mockCon := initStore(t)
+	defer os.Remove(tmpDirName)
 
-	err = store.Start()
+	err := store.Start()
 	a.NoError(err)
 
 	mockCon.EXPECT().Resolve("www.google.com").Return(nil, connector.ErrOauthFailed)

@@ -4,6 +4,7 @@ import (
 	"github.com/marian-craciunescu/urlenricher/cachestore"
 	"github.com/marian-craciunescu/urlenricher/config"
 	"github.com/marian-craciunescu/urlenricher/connector"
+	"github.com/marian-craciunescu/urlenricher/metrics"
 	"github.com/marian-craciunescu/urlenricher/rest"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -29,6 +30,9 @@ func main() {
 		"secret": conf.ApiSecret,
 	}).Info("Starting with")
 
+	metricManager := metrics.NewMetricManager()
+	metricEndpoint := metrics.NewMetricEnpoint(metricManager)
+
 	brigthcloud, err := connector.NewBrightCloudConnector(conf.ApiKey, conf.ApiSecret)
 	if err != nil {
 		panic("Could not create connector.Exiting")
@@ -37,7 +41,7 @@ func main() {
 		panic("Could not start brigthcloud connector")
 	}
 
-	urlCache, err := cachestore.NewURLCacheStore(50000, 2600, brigthcloud, conf.DataPath)
+	urlCache, err := cachestore.NewURLCacheStore(50000, 2600, brigthcloud, conf.DataPath, metricManager)
 	if err != nil {
 		panic("Could not create cache store.Exiting")
 	}
@@ -47,7 +51,7 @@ func main() {
 
 	cacheEndpoint := cachestore.NewURLEndpoint(urlCache)
 
-	apiServer := rest.NewAPIServer(conf, cacheEndpoint)
+	apiServer := rest.NewAPIServer(conf, cacheEndpoint, metricEndpoint)
 	err = apiServer.Start()
 	if err != nil {
 		log.WithError(err).Error("Error starting rest server")
