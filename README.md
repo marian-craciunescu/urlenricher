@@ -40,8 +40,8 @@ curl -XGET http://127.0.0.1:8081/resolve?target=www.google.com
 
 
 # ROADMAP
-1) Add more tests and Benchmark
+1) Increase Code coverage
 2) Add more connectors.
 3) Add swagger for the REST api description
-
+4) add golangci.com and codecov.io for CI/CD
 
