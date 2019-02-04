@@ -9,7 +9,6 @@ before_install:
 - go get github.com/mattn/goveralls
 - go get golang.org/x/tools/cmd/cover
 script:
-- go test -v ./...
+- go test -v -coverprofile=coverage.txt -covermode=atomic ./...
 after_success:
-- scripts/generate_coverage.sh
-- goveralls -coverprofile=full_cov.out -service=travis-ci
+- bash <(curl -s https://codecov.io/bash) -t 3d669ea5-bd95-4792-88b7-87b01d15418f
